@@ -1,38 +1,44 @@
 // components/Shop.js
-import React, { useState } from 'react';
-import SearchFilter from './SearchFilter';
+import React, { useEffect } from 'react';
 import ItemCard from './ItemCard';
 
-const Shop = ({ items, userBalance, onPurchase }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Filter items based on search and category
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+const Shop = ({ items, userBalance, onPurchase, selectedItem, setSelectedItem }) => {
+  // Scroll to selected item when it changes
+  useEffect(() => {
+    if (selectedItem) {
+      const itemElement = document.getElementById(`item-${selectedItem.id}`);
+      if (itemElement) {
+        itemElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        // Add highlight effect
+        itemElement.classList.add('highlighted');
+        setTimeout(() => {
+          itemElement.classList.remove('highlighted');
+          setSelectedItem(null);
+        }, 2000);
+      }
+    }
+  }, [selectedItem, setSelectedItem]);
 
   return (
     <>
-      <SearchFilter
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-      />
-
       <div className="items-grid">
-        {filteredItems.map(item => (
+        {items.map(item => (
           <ItemCard 
             key={item.id} 
             item={item} 
             userBalance={userBalance}
             onPurchase={onPurchase}
+            id={`item-${item.id}`}
           />
         ))}
       </div>
 
-      {filteredItems.length === 0 && (
+      {items.length === 0 && (
         <div className="empty-state">
-          <p className="empty-text">No items found matching your criteria.</p>
+          <p className="empty-text">No items available.</p>
         </div>
       )}
     </>

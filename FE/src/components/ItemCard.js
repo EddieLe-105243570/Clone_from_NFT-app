@@ -1,7 +1,7 @@
 // components/ItemCard.js
 import React from 'react';
 
-const ItemCard = ({ item, userBalance, onPurchase }) => {
+const ItemCard = ({ item, userBalance, onPurchase, id }) => {
   const handlePurchase = () => {
     onPurchase(item);
   };
@@ -10,7 +10,7 @@ const ItemCard = ({ item, userBalance, onPurchase }) => {
   const isDisabled = isOutOfStock || userBalance < item.price;
 
   return (
-    <div className="item-card">
+    <div className="item-card" id={id}>
       <div className="item-image">
         <img src={item.image} alt={item.name} />
       </div>

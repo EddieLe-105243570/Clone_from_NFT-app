@@ -13,6 +13,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('shop');
   const [userBalance, setUserBalance] = useState(500);
   const [studentCode] = useState('SWH00xxxx');
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const purchaseItem = (item) => {
     if (userBalance >= item.price) {
@@ -36,9 +37,22 @@ const App = () => {
     }
   };
 
+  const handleItemSelect = (item) => {
+    setSelectedItem(item);
+    // You can add additional logic here, like scrolling to the item
+    // or highlighting it in the shop view
+  };
+
   return (
     <div className="app">
-      <Header studentCode={studentCode} userBalance={userBalance} />
+      <Header 
+        studentCode={studentCode} 
+        userBalance={userBalance}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        items={items}
+        onItemSelect={handleItemSelect}
+      />
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className="container main-content">
@@ -47,6 +61,8 @@ const App = () => {
             items={items}
             userBalance={userBalance}
             onPurchase={purchaseItem}
+            selectedItem={selectedItem}
+            setSelectedItem={setSelectedItem}
           />
         )}
         

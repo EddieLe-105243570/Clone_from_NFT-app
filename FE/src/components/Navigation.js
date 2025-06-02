@@ -4,7 +4,7 @@ import { ShoppingCart, Clock } from 'lucide-react';
 
 const Navigation = ({ activeTab, setActiveTab }) => {
   return (
-    <nav className="navigation">
+    <nav className="navigation desktop-only">
       <div className="container">
         <div className="nav-tabs">
           <button
