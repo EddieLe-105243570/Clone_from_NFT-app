@@ -7,7 +7,6 @@ const Header = ({ userBalance, studentCode, activeTab, setActiveTab, items = [],
   const [isMobile, setIsMobile] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
 
   // Check screen size on mount and resize
   useEffect(() => {
@@ -87,11 +86,9 @@ const Header = ({ userBalance, studentCode, activeTab, setActiveTab, items = [],
                     src="/images/Coin-removebg.png" 
                     alt="Coin Icon" 
                     className="balance-icon"
-                    style={{ width: '24px', height: '24px', verticalAlign: 'middle' }}
                   />
                   <span className="balance-text">{userBalance} coins</span>
                 </div>
-                <User className="user-icon" />
               </div>
             </div>
 
@@ -149,7 +146,6 @@ const Header = ({ userBalance, studentCode, activeTab, setActiveTab, items = [],
                     src="/images/Coin-removebg.png" 
                     alt="Coin Icon" 
                     className="balance-icon"
-                    style={{ width: '24px', height: '24px', verticalAlign: 'middle' }}
                   />
                   <span className="balance-text">{userBalance} coins</span>
                 </div>
