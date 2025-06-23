@@ -13,7 +13,7 @@ export const mockItems = [
 ];
 
 export const mockTransactions = [
-  { id: 1, itemName: 'Swinburne T-Shirt', date: '2025-03-28', status: 'Completed' },
-  { id: 2, itemName: 'Swinburne Notebook and Pen', date: '2025-04-25', status: 'Completed' },
-  { id: 3, itemName: 'Swinburne Tote (Black)', date: '2025-05-20', status: 'Completed' }
+  { id: 1, itemName: 'Swinburne T-Shirt', quantity: '2',price: '360', date: '2025-03-28', status: 'Completed' },
+  { id: 2, itemName: 'Swinburne Notebook and Pen', quantity: '1',price: '30', date: '2025-04-25', status: 'Completed' },
+  { id: 3, itemName: 'Swinburne Tote (Black)', quantity: '1',price: '140', date: '2025-05-20', status: 'Completed' }
 ];
