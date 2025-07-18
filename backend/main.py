@@ -1,10 +1,22 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import date
 from web3 import Web3
-import json
+from dotenv import load_dotenv
+import os
 import mysql.connector
+import json
+from datetime import datetime
 
+# ===============================
+# 1. Load environment variables
+# ===============================
+load_dotenv()
+
+network = os.getenv("NETWORK")  # ganache or sepolia
+
+# ===============================
+# 2. Initialize FastAPI app
+# ===============================
 app = FastAPI()
 
 # Allow React frontend to connect
@@ -16,7 +28,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database connection
+# ===============================
+# 3. Connect to database
+# ===============================
 def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
@@ -25,34 +39,47 @@ def get_db_connection():
         database="swin_shop"
     )
 
-@app.get("/")
-def read_root():
-    return {"message": "Swin Shop Backend is running"}
+# ===============================
+# 4. Connect to blockchain network
+# ===============================
+if network == "sepolia":
+    w3 = Web3(Web3.HTTPProvider(os.getenv("INFURA_URL")))
+    chain_id = 11155111  # Sepolia
+    contract_address = os.getenv("SEPOLIA_CONTRACT_ADDRESS")
+else:
+    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
+    chain_id = 1337  # Ganache
+    contract_address = os.getenv("GANACHE_CONTRACT_ADDRESS")
 
-# Connect to Ganache
-w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
+print("Connected to blockchain:", w3.is_connected())
+print("Using network:", network)
 
-# Check connection
-print("Connected to Ganache:", w3.is_connected())
+# ===============================
+# 5. Load wallet details
+# ===============================
+my_address = os.getenv("ACCOUNT_ADDRESS")
+private_key = os.getenv("PRIVATE_KEY")
 
-# Load ABI from compiled_code.json
-with open("./compiled_code.json", "r") as file:
+# ===============================
+# 6. Load contract ABI and contract
+# ===============================
+with open("compiled_code.json", "r") as file:
     compiled_sol = json.load(file)
 
 abi = compiled_sol["contracts"]["sampleContract.sol"]["SimpleStorage"]["abi"]
-
-# Your deployed contract address
-contract_address = "0x2dAb1a15C9Fd4cE7bEc51Ee70ab4134015E48F70"
-
-# Load contract
 contract = w3.eth.contract(address=contract_address, abi=abi)
 
-# Your Ganache account details
-my_address = "0x0711179bD08B2A39756456059661E2745FB1d042"
-private_key = "0x8b61443a44a09def2df352dff90115b1622d75ac9e05e7341d1ab29dff99b0b4"
-chain_id = 1337
+# ===============================
+# 7. API routes
+# ===============================
 
-# Get all users
+@app.get("/")
+def read_root():
+    return {"message": f"Swin Shop Backend running on {network}"}
+
+
+# ========== USERS ==========
+
 @app.get("/users")
 def get_users():
     conn = get_db_connection()
@@ -63,7 +90,7 @@ def get_users():
     conn.close()
     return users
 
-# Get user by email
+
 @app.get("/users/{mail}")
 def get_user(mail: str):
     conn = get_db_connection()
@@ -77,7 +104,7 @@ def get_user(mail: str):
     else:
         raise HTTPException(status_code=404, detail="User not found")
 
-# Create new user
+
 @app.post("/users")
 def create_user(user: dict):
     conn = get_db_connection()
@@ -91,166 +118,129 @@ def create_user(user: dict):
     conn.close()
     return {"message": "User created successfully"}
 
-# Update user's coins
-@app.put("/users/{mail}/coins")
-def update_coins(mail: str, coins: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("UPDATE users SET coins = %s WHERE mail = %s", (coins, mail))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return {"message": "Coins updated"}
-
-# Delete user
-@app.delete("/users/{mail}")
-def delete_user(mail: str):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM users WHERE mail=%s", (mail,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return {"message": "User deleted"}
-
-# Login endpoint
 @app.post("/login")
-def login(data: dict):
-    student_id = data["id"]
-    password = data["password"]
-    
+def login(credentials: dict):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE id=%s", (student_id,))
+    cursor.execute("SELECT * FROM users WHERE id=%s AND password=%s", (credentials["id"], credentials["password"]))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
-    
     if user:
-        if user["password"] == password:
-            return {"message": "Login successful", "user": user}
-        else:
-            raise HTTPException(status_code=401, detail="Invalid password")
+        return {"user": user}
     else:
-        raise HTTPException(status_code=404, detail="User not found")
-    
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+
+# ========== MERCHANDISES ==========
+
 @app.get("/merchandises")
 def get_merchandises():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-
-    # Update stock status based on remaining before fetching
-    cursor.execute("""
-        UPDATE merchandises
-        SET stock = CASE
-            WHEN remaining >= 1 THEN 'Available'
-            ELSE 'Out of Stock'
-        END
-    """)
-    conn.commit()
-
     cursor.execute("SELECT * FROM merchandises")
-    merchandises = cursor.fetchall()
+    items = cursor.fetchall()
     cursor.close()
     conn.close()
-    return merchandises
+    return items
 
-@app.get("/transactions/{user_id}")
-def get_transactions(user_id: int):
+
+# ========== TRANSACTIONS ==========
+
+@app.get("/transactions")
+def get_transactions():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT t.id, m.name AS item_name, t.quantity, t.total_price, t.date, t.status
-        FROM transactions t
-        JOIN merchandises m ON t.item_id = m.id
-        WHERE t.user_id = %s
-        ORDER BY t.date DESC
-    """, (user_id,))
+    cursor.execute("SELECT * FROM transactions")
     transactions = cursor.fetchall()
     cursor.close()
     conn.close()
     return transactions
 
-# Purchase endpoint
-@app.post("/purchase")
-def purchase(data: dict):
-    student_id = data["id"]
-    total_price = data["total_price"]
-    item_id = data["item_id"]
-    quantity = data.get("quantity", 1)  # default to 1
-    
+
+@app.get("/transactions/{user_id}")
+def get_user_transactions(user_id: int):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    
-    # Fetch user coins
-    cursor.execute("SELECT coins FROM users WHERE id=%s", (student_id,))
+    cursor.execute("SELECT * FROM transactions WHERE user_id=%s", (user_id,))
+    transactions = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return transactions
+
+
+# ========== PURCHASE ==========
+
+@app.post("/purchase")
+def purchase(data: dict):
+    user_id = data["id"]
+    item_id = data["item_id"]
+    quantity = data["quantity"]
+    total_price = data["total_price"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Check user balance
+    cursor.execute("SELECT coins FROM users WHERE id=%s", (user_id,))
     user = cursor.fetchone()
-    if not user:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    current_coins = user["coins"]
-    if current_coins < total_price:
+    if not user or user["coins"] < total_price:
         cursor.close()
         conn.close()
         raise HTTPException(status_code=400, detail="Insufficient balance")
-    
-    # Fetch merchandise stock
+
+    # Check item stock
     cursor.execute("SELECT remaining FROM merchandises WHERE id=%s", (item_id,))
     item = cursor.fetchone()
-    if not item:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    current_remaining = item["remaining"]
-    if current_remaining < quantity:
+    if not item or item["remaining"] < quantity:
         cursor.close()
         conn.close()
         raise HTTPException(status_code=400, detail="Not enough items in stock")
-    
-    # Deduct user coins
-    new_balance = current_coins - total_price
-    cursor.execute("UPDATE users SET coins=%s WHERE id=%s", (new_balance, student_id))
-    
-    # Deduct merchandise stock and update status
-    new_remaining = current_remaining - quantity
-    new_stock_status = 'Available' if new_remaining >= 1 else 'Out of Stock'
-    cursor.execute("UPDATE merchandises SET remaining=%s, stock=%s WHERE id=%s",
-                   (new_remaining, new_stock_status, item_id))
-    
-    # Insert transaction record
-    today = date.today()
-    cursor.execute("""
-        INSERT INTO transactions (user_id, item_id, quantity, total_price, date, status)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (student_id, item_id, quantity, total_price, today, 'Completed'))
-    
+
+    # Deduct user coins and update item stock
+    cursor.execute("UPDATE users SET coins = coins - %s WHERE id=%s", (total_price, user_id))
+    cursor.execute("UPDATE merchandises SET remaining = remaining - %s WHERE id=%s", (quantity, item_id))
+
+    # Record transaction
+    cursor.execute(
+        "INSERT INTO transactions (user_id, item_id, quantity, total_price, date, status) VALUES (%s, %s, %s, %s, %s, %s)",
+        (user_id, item_id, quantity, total_price, datetime.now(), "Completed")
+    )
+
     conn.commit()
+
+    # ========== SMART CONTRACT INTERACTION ==========
+
+    try:
+        nonce = w3.eth.get_transaction_count(my_address)
+        txn = contract.functions.store(total_price).build_transaction({
+            "chainId": chain_id,
+            "from": my_address,
+            "nonce": nonce,
+            "gasPrice": w3.to_wei("20", "gwei")
+        })
+
+        signed_txn = w3.eth.account.sign_transaction(txn, private_key=private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+        tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+        print("✅ Blockchain transaction hash:", tx_hash.hex())
+
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=500, detail=f"Blockchain transaction failed: {e}")
+
     cursor.close()
     conn.close()
-    
-    # Build transaction to call smart contract function
-    nonce = w3.eth.get_transaction_count(my_address)
+    return {"message": "Purchase successful", "new_balance": user["coins"] - total_price}
 
-    txn = contract.functions.store(123).build_transaction({
-        "chainId": chain_id,
-        "from": my_address,
-        "nonce": nonce,
-        "gasPrice": w3.eth.gas_price,
-    })
+# ========== BLOCKCHAIN RETRIEVE (example) ==========
 
-    # Sign transaction
-    signed_txn = w3.eth.account.sign_transaction(txn, private_key=private_key)
-
-    # Send transaction
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-
-    # Wait for confirmation
-    w3.eth.wait_for_transaction_receipt(tx_hash)
-
-    print("✅ Purchase recorded on blockchain with tx hash:", tx_hash.hex())
-
-    
-    return {"message": "Purchase successful", "new_balance": new_balance}
+@app.get("/blockchain/value")
+def get_blockchain_value():
+    try:
+        value = contract.functions.retrieve().call()
+        return {"stored_value": value}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Blockchain call failed: {e}")

@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+web3
+py-solc-x
+python-dotenv
+mysql-connector-python
