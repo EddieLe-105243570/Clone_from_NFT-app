@@ -1,119 +1,97 @@
-// App.js (updated for backend integration)
+// App.js
 import React, { useState, useEffect } from 'react';
 import './styles/App.css';
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import Shop from './components/Shop';
 import TransactionHistory from './components/TransactionHistory';
-// import { mockItems, mockTransactions } from './data/mockData';
 import { EscrowProvider } from './components/EscrowContext';
 import EscrowPanel from './components/EscrowPanel';
 import LoginPage from './components/LoginPage';
-import { useWallet } from './components/WalletContext';
+import axios from 'axios';
 
 const App = () => {
-  const { balance, setBalance } = useWallet();
   const [items, setItems] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('shop');
+  const [userBalance, setUserBalance] = useState(null);
   const [studentCode, setStudentCode] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const handlePostPurchaseUpdate = (itemId, quantityPurchased) => {
-  setItems(prevItems =>
-    prevItems.map(item => {
-      if (item.id === itemId) {
-        const updatedQuantity = item.stock_quantity - quantityPurchased;
-        return {
-          ...item,
-          stock_quantity: updatedQuantity,
-          stock_status: updatedQuantity <= 0 ? 'Out of Stock' : 'Available'
-        };
-      }
-      return item;
-    })
-  );
-};
-
-  const handleLogin = (code) => {
-    setStudentCode(code);
-    localStorage.setItem('studentCode', code);
-  };
-
+  // Fetch items on mount
   useEffect(() => {
-    const savedCode = localStorage.getItem('studentCode');
-    if (savedCode) {
-      setStudentCode(savedCode);
-    }
+    const fetchItems = async () => {
+      try {
+        const res = await axios.get('http://localhost:8000/merchandises');
+        setItems(res.data);
+      } catch (err) {
+        console.error("Failed to fetch items:", err);
+      }
+    };
+
+    fetchItems();
   }, []);
 
+  // Fetch transactions when studentCode is set (after login)
   useEffect(() => {
-    if (studentCode) {
-      fetch('http://localhost:8000/items')
-        .then(res => res.json())
-        .then(data => setItems(data));
+    const fetchTransactions = async () => {
+      if (!studentCode) return;
 
-      fetch(`http://localhost:8000/transactions/${studentCode}`)
-        .then(res => res.json())
-        .then(data => setTransactions(data));
+      try {
+        const res = await axios.get(`http://localhost:8000/transactions/${studentCode}`);
+        setTransactions(res.data);
+      } catch (err) {
+        console.error("Failed to fetch transactions:", err);
+      }
+    };
 
-      fetch(`http://localhost:8000/wallet/${studentCode}`)
-        .then(res => res.json())
-        .then(data => setBalance(data.balance));
-    }
-  }, [studentCode, setBalance]);
+    fetchTransactions();
+  }, [studentCode]);
 
-  const purchaseItem = (item, quantity = 1, totalPrice = item.price) => {
-    if (item.stock_status !== 'Out of Stock' && balance >= totalPrice) {
-      fetch("http://localhost:8000/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          student_code: studentCode,
-          item_name: item.name,
-          quantity,
-          price: totalPrice,
-          status: "Completed",
-        }),
+  const handleLogin = (user) => {
+    setStudentCode(user.id);
+    setUserBalance(user.coins);
+  };
+
+  const purchaseItem = async (item, quantity = 1, totalPrice = item.price) => {
+    if (!studentCode) return;
+
+    try {
+      const res = await axios.post('http://localhost:8000/purchase', {
+        id: studentCode,
+        item_id: item.id,
+        quantity: quantity,
+        total_price: totalPrice
       });
 
-      fetch(`http://localhost:8000/wallet/debit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_code: studentCode, amount: totalPrice })
-      })
-        .then(res => res.json())
-        .then(data => setBalance(data.new_balance));
+      const newBalance = res.data.new_balance;
+      setUserBalance(newBalance);
 
-      const newTransaction = {
-        id: transactions.length + 1,
-        itemName: item.name,
-        quantity,
-        price: totalPrice,
-        date: new Date().toISOString().split("T")[0],
-        status: "Completed",
-      };
-      setTransactions((prev) => [newTransaction, ...prev]);
+      // Optionally refetch transactions after purchase for up-to-date history
+      const transRes = await axios.get(`http://localhost:8000/transactions/${studentCode}`);
+      setTransactions(transRes.data);
+
       alert(`Successfully purchased ${quantity}x ${item.name}!`);
-    } else {
-      alert("Purchase failed: out of stock or insufficient balance.");
+    } catch (err) {
+      if (err.response) {
+        alert(`Purchase failed: ${err.response.data.detail}`);
+      } else {
+        alert('Purchase failed: server error.');
+      }
     }
   };
 
   if (!studentCode) {
-  return (
-    <div className="app">
-      <LoginPage onLogin={handleLogin} />
-    </div>
-  );
-}
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
-return (
+  return (
     <EscrowProvider>
       <div className="app">
         <Header 
           studentCode={studentCode} 
+          userBalance={userBalance}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           items={items}
@@ -125,20 +103,14 @@ return (
             <>
               <Shop
                 items={items}
-                balance={balance}
+                userBalance={userBalance}
                 onPurchase={purchaseItem}
                 selectedItem={selectedItem}
                 setSelectedItem={setSelectedItem}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
               />
-              <EscrowPanel
-                onConfirm={(item, quantity, totalPrice) => {
-                  purchaseItem(item, quantity, totalPrice);
-                  handlePostPurchaseUpdate(item.id, quantity);
-                }}
-              />
-
+              <EscrowPanel onConfirm={purchaseItem} />
             </>
           )}
           {activeTab === 'history' && (
@@ -147,7 +119,7 @@ return (
         </main>
       </div>
     </EscrowProvider>
-);
+  );
 };
 
 export default App;

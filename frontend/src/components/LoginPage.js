@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 const LoginPage = ({ onLogin }) => {
   const [studentCode, setStudentCode] = useState('');
@@ -6,31 +7,24 @@ const LoginPage = ({ onLogin }) => {
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // ✅ Validate format
-    if (!/^SWH\d{5}$/.test(studentCode)) {
-      setError("Student code must start with 'SWH' followed by 5 digits");
-      return;
+  e.preventDefault();
+  try {
+    const res = await axios.post('http://localhost:8000/login', {
+      id: studentCode,
+      password: password
+    });
+    
+    const user = res.data.user;
+    onLogin(user); // pass full user object
+  } catch (err) {
+    if (err.response) {
+      setError(err.response.data.detail);
+    } else {
+      setError('Login failed. Server error.');
     }
+  }
+};
 
-    try {
-      const response = await fetch('http://localhost:8000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_code: studentCode, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Invalid student code or password');
-      }
-
-      const user = await response.json();
-      onLogin(user.student_code);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   return (
     <div className="login-container">
@@ -38,7 +32,7 @@ const LoginPage = ({ onLogin }) => {
         <h2>Student Login</h2>
         <input
           type="text"
-          placeholder="Student Code (e.g. SWH02300)"
+          placeholder="Student ID"
           value={studentCode}
           onChange={(e) => setStudentCode(e.target.value)}
         />

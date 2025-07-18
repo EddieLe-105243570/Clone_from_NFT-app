@@ -1,23 +1,19 @@
-// Shop.js (integrated with backend + original design)
+// components/Shop.js
 import React, { useEffect } from 'react';
 import ItemCard from './ItemCard';
-import SearchFilter from './SearchFilter';
+import SearchFilter from './SearchFilter'; // 🔍 Import SearchFilter
 
-const Shop = ({
-  items = [],
-  balance,
-  onPurchase,
-  selectedItem,
-  setSelectedItem,
-  searchTerm,
-  setSearchTerm
+const Shop = ({ 
+  items, userBalance, onPurchase, 
+  selectedItem, setSelectedItem,
+  searchTerm, setSearchTerm
 }) => {
-  // Filter items based on search
+
+  // Filter the items based on search term
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Scroll to and highlight selected item
   useEffect(() => {
     if (selectedItem) {
       const itemElement = document.getElementById(`item-${selectedItem.id}`);
@@ -34,25 +30,23 @@ const Shop = ({
 
   return (
     <>
-      {/* 🔍 Desktop Search Bar */}
+      {/* Desktop Search Filter - hidden on mobile */}
       <div className="desktop-only">
         <SearchFilter searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
 
-      {/* 🛍️ Shop Grid */}
       <div className="items-grid">
         {filteredItems.map(item => (
-          <ItemCard
-            key={item.id}
-            id={`item-${item.id}`}
-            item={item}
-            userBalance={balance}
+          <ItemCard 
+            key={item.id} 
+            item={item} 
+            userBalance={userBalance}
             onPurchase={onPurchase}
+            id={`item-${item.id}`}
           />
         ))}
       </div>
 
-      {/* ❌ No Results */}
       {filteredItems.length === 0 && (
         <div className="empty-state">
           <p className="empty-text">No items found.</p>

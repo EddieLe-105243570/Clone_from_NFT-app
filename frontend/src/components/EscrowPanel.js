@@ -28,8 +28,7 @@ const EscrowPanel = ({ onConfirm }) => {
         <h4>Confirm Purchase</h4>
         <p><strong>{escrow.item.name}</strong></p>
         <div className="escrow-image-wrapper">
-          <img src={escrow.item.image_url} alt={escrow.item.name} className="escrow-image" />
-
+          <img src={escrow.item.image} alt={escrow.item.name} className="escrow-image" />
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>

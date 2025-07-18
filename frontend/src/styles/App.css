@@ -633,12 +633,6 @@ body {
 }
 
 /* Item Card styles */
-.stock-info {
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin-left: 8px;
-}
-
 .item-card {
   background-color: white;
   border-radius: 0.5rem;
@@ -970,6 +964,7 @@ body {
   object-fit: contain;
   border: 1px solid #e5e7eb;
 }
+
 
 .escrow-modal-buttons {
   display: flex;
