@@ -19,6 +19,22 @@ const App = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Fetch new transactions when activeTab changes to 'history'
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!studentCode || activeTab !== 'history') return;
+
+      try {
+        const res = await axios.get(`http://localhost:8000/transactions/${studentCode}`);
+        setTransactions(res.data);
+      } catch (err) {
+        console.error("Failed to fetch transactions:", err);
+      }
+    };
+
+  fetchTransactions();
+}, [activeTab, studentCode]);
+
   // Fetch items on mount
   useEffect(() => {
     const fetchItems = async () => {

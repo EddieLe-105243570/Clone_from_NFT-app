@@ -162,11 +162,17 @@ def get_transactions():
 def get_user_transactions(user_id: int):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM transactions WHERE user_id=%s", (user_id,))
+    cursor.execute("""
+        SELECT t.*, m.name as item_name 
+        FROM transactions t
+        JOIN merchandises m ON t.item_id = m.id
+        WHERE t.user_id = %s
+    """, (user_id,))
     transactions = cursor.fetchall()
     cursor.close()
     conn.close()
     return transactions
+
 
 
 # ========== PURCHASE ==========
