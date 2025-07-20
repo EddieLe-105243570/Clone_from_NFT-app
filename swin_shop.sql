@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th7 18, 2025 lúc 04:46 AM
+-- Thời gian đã tạo: Th7 20, 2025 lúc 03:56 AM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -41,14 +41,14 @@ CREATE TABLE `merchandises` (
 --
 
 INSERT INTO `merchandises` (`id`, `name`, `price`, `stock`, `image`, `remaining`) VALUES
-(1, 'Swinburne T-Shirt', 180, 'Available', '/images/SwinTShirt.png', 1),
-(2, 'Swinburne Hoodie (Red)', 420, 'Available', '/images/SwinRedHoodie.png', 11),
-(3, 'Swinburne Teddy Bear (Brown)', 150, 'Out of Stock', '/images/SwinTeddyBear.png', 0),
-(4, 'Swinburne Teddy Bear (Beige)', 200, 'Available', '/images/SwinTeddyBearBeige.jpg', 15),
-(5, 'Swinburne Notebook and Pen', 30, 'Out of Stock', '/images/SwinNotebook.jpg', 0),
-(6, 'Swinburne Thermal Bottle', 330, 'Out of Stock', '/images/SwinWaterBottle.png', 0),
-(7, 'Swinburne Umbrella', 170, 'Available', '/images/SwinUmbrella.png', 5),
-(8, 'Swinburne Tote (Black)', 140, 'Available', '/images/SwinToteBlack.jpg', 20);
+(1, 'Swinburne T-Shirt', 180, 'Available', '/images/SwinTShirt.png', 990),
+(2, 'Swinburne Hoodie (Red)', 420, 'Available', '/images/SwinRedHoodie.png', 995),
+(3, 'Swinburne Teddy Bear (Brown)', 150, 'Available', '/images/SwinTeddyBear.png', 997),
+(4, 'Swinburne Teddy Bear (Beige)', 200, 'Available', '/images/SwinTeddyBearBeige.jpg', 993),
+(5, 'Swinburne Notebook and Pen', 30, 'Available', '/images/SwinNotebook.jpg', 999),
+(6, 'Swinburne Thermal Bottle', 330, 'Available', '/images/SwinWaterBottle.png', 999),
+(7, 'Swinburne Umbrella', 170, 'Available', '/images/SwinUmbrella.png', 998),
+(8, 'Swinburne Tote (Black)', 140, 'Available', '/images/SwinToteBlack.jpg', 999);
 
 -- --------------------------------------------------------
 
@@ -65,14 +65,6 @@ CREATE TABLE `transactions` (
   `date` date NOT NULL,
   `status` varchar(50) DEFAULT 'Completed'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Đang đổ dữ liệu cho bảng `transactions`
---
-
-INSERT INTO `transactions` (`id`, `user_id`, `item_id`, `quantity`, `total_price`, `date`, `status`) VALUES
-(12, 105243570, 4, 1, 200, '2025-07-18', 'Completed'),
-(13, 105243570, 2, 1, 420, '2025-07-18', 'Completed');
 
 -- --------------------------------------------------------
 
@@ -93,13 +85,13 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `mail`, `coins`, `password`) VALUES
-(105243570, 'Le Duc Duyet', '105243570@student.swin.edu.au', 95699, '12345'),
-(105243571, 'Nguyen Van A', '105243571@student.swin.edu.au', 350, '12345'),
-(105243572, 'Tran Thi B', '105243572@student.swin.edu.au', 200, '12345'),
-(105243573, 'Pham Van C', '105243573@student.swin.edu.au', 800, '12345'),
-(105243574, 'Hoang Thi D', '105243574@student.swin.edu.au', 100, '12345'),
-(105243575, 'Vo Van E', '105243575@student.swin.edu.au', 650, '12345'),
-(105243576, 'Le Thi F', '105243576@student.swin.edu.au', 450, '12345');
+(105243570, 'Le Duc Duyet', '105243570@student.swin.edu.au', 9999, '12345'),
+(105243571, 'Nguyen Van A', '105243571@student.swin.edu.au', 9999, '12345'),
+(105243572, 'Tran Thi B', '105243572@student.swin.edu.au', 9999, '12345'),
+(105243573, 'Pham Van C', '105243573@student.swin.edu.au', 9999, '12345'),
+(105243574, 'Hoang Thi D', '105243574@student.swin.edu.au', 9999, '12345'),
+(105243575, 'Vo Van E', '105243575@student.swin.edu.au', 9999, '12345'),
+(105243576, 'Le Thi F', '105243576@student.swin.edu.au', 9999, '12345');
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -140,7 +132,7 @@ ALTER TABLE `merchandises`
 -- AUTO_INCREMENT cho bảng `transactions`
 --
 ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT cho bảng `users`
